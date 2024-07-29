@@ -44,9 +44,8 @@ void Mosaic::loadPoses()
   // Remove offset: pre-multiply by the inverse of the first pose so that
   // the first rotation becomes the identity (and events project in the middle of the mosaic)
 
-  // FILL IN... get the first control pose
-  //Transformation T0 = ... ;
-  Transformation T0;
+  // Get the first control pose
+  Transformation T0 = (*poses_.begin()).second;
 
   size_t control_pose_idx = 0u;
   for(auto it : poses_)

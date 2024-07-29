@@ -31,7 +31,10 @@ void Mosaic::precomputeBearingVectors()
 */
 void Mosaic::project_EquirectangularProjection(const cv::Point3d& pt_3d, cv::Point2f& pt_on_mosaic)
 {
-  // FILL IN  pt_on_mosaic
+  // calculate x coordinate in mosaic -> atan2 to get range [-pi, pi]
+  pt_on_mosaic.x = (mosaic_width_ / 2.0) + fx_ * atan2(pt_3d.x, pt_3d.z);
+  // y coordinate in mosaic
+  pt_on_mosaic.y = (mosaic_height_ / 2.0) + fy_ * asin(pt_3d.y/ (sqrt(pow(pt_3d.x,2) + pow(pt_3d.y,2) + pow(pt_3d.z,2))));
 
 }
 

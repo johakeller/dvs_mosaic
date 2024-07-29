@@ -23,14 +23,17 @@ Mosaic::Mosaic(ros::NodeHandle & nh, ros::NodeHandle nh_private)
   nh_private.param<float>("variance_init_grad", grad_init_variance, 10.);
 
   // Set up subscribers
-  // FILL IN...
-  ROS_ERROR("You need to start writing the code..."); return;
-
+  //events subscriber
+  event_sub_ = nh_.subscribe("events", 0, &Mosaic::eventsCallback, this);
   // set queue_size to 0 to avoid discarding messages (for correctness).
 
   // Set up publishers
   image_transport::ImageTransport it_(nh_);
-  // FILL IN...
+  time_map_pub_ = it_.advertise("time_map",1);
+  mosaic_pub_ = it_.advertise("mosaic",1);
+  mosaic_gradx_pub_ = it_.advertise("mosaic_gx",1);
+  mosaic_grady_pub_ = it_.advertise("mosaic_gy",1);
+  mosaic_tracecov_pub_ = it_.advertise("mosaic_trace_cov",1);
   // my topics names: time_map, mosaic, mosaic_gx, mosaic_gy, mosaic_trace_cov,
 
   pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("mosaic_pose", 1);
@@ -50,12 +53,17 @@ Mosaic::Mosaic(ros::NodeHandle & nh, ros::NodeHandle nh_private)
   camera_info_manager::CameraInfoManager cam_info (nh_, cam_name);
   dvs_cam_.fromCameraInfo(cam_info.getCameraInfo());
   const cv::Size sensor_resolution = dvs_cam_.fullResolution();
-  // FILL IN ...
   // Set sensor_width_, sensor_height_ and precompute bearing vectors
+  sensor_width_ = sensor_resolution.width;
+  sensor_height_ = sensor_resolution.height;
+  precomputeBearingVectors();
 
   // Mosaic size (in pixels)
   mosaic_width_ = 2 * mosaic_height_;
-  // FILL IN ...
+  mosaic_size_=cv::Size(mosaic_width_,mosaic_height_ );
+  fx_ = static_cast<float>(mosaic_width_)/(2.0*M_PI);
+  fy_ = static_cast<float>(mosaic_height_)/M_PI;
+  mosaic_img_=cv::Mat::zeros(mosaic_size_, CV_32FC1);
   // Set mosaic_size_, fx_ and fy_ and Initialize mosaic_img_ (if needed)
 
 
@@ -80,7 +88,11 @@ Mosaic::Mosaic(ros::NodeHandle & nh, ros::NodeHandle nh_private)
 
 Mosaic::~Mosaic()
 {
-  // FILL IN ...
+  time_map_pub_.shutdown();
+  mosaic_pub_.shutdown();
+  mosaic_gradx_pub_.shutdown();
+  mosaic_grady_pub_.shutdown();
+  mosaic_tracecov_pub_.shutdown();
   // shut down all publishers
 }
 
@@ -167,14 +179,20 @@ void Mosaic::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg)
       {
         // Get time of current and last event at the pixel
         const double t_ev = ev.ts.toSec();
-        double t_prev; // FILL IN: get it from time_map_
-        // FILL IN: Update time map
+
+        // get timestamp of prev. event at pixel
+        double t_prev = time_map_.at<double>(ev.y, ev.x);
+
+        // Update time map
+        time_map_.at<double>(ev.y, ev.x) = t_ev;
 
         // Get last rotation at the event
         const int idx = ev.y*sensor_width_ + ev.x;
-        cv::Matx33d Rot_prev; // FILL IN get it from map_of_last_rotations_
-        // FILL IN update (prepare for next iteration)
-        // map_of_last_rotations_.at(idx) = ...
+        // initialize rotation matrix cv::Matx33d (3x3 matrix)
+        cv::Matx33d Rot_prev = map_of_last_rotations_.at(idx); // get it from map_of_last_rotations_
+        // update (prepare for next iteration)
+        // use current rotation of the batch
+        map_of_last_rotations_.at(idx) = Rot;
 
         /*
         // Example of plotting events on mosaic
@@ -188,7 +206,6 @@ void Mosaic::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg)
           pano_ev.at<float>(ir,ic) = (ev.polarity ? 1. : -1.);
         }
         */
-
         if (t_prev < 0)
         {
           VLOG(3) << "Uninitialized pixel. Continue";

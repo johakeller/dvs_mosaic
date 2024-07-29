@@ -40,10 +40,14 @@ void reconstructBrightnessFromGradientMap(const cv::Mat& grad_map,
   pde::poisolve(M, F, 1.0, 1.0, 1.0, 1.0,
                 gradient_on_boundary,
                 pde::types::boundary::Neumann,false);
-
+  
   // Fill in output variable
   *map_reconstructed = cv::Mat(img_size, CV_32FC1);
-  // FILL IN ...
+  for (int y=0; y<height; y++){
+    for (int x=0; x< width; x++){
+      map_reconstructed->at<float>(y,x)=M[y][x];
+    }
+  }
 
 }
 
