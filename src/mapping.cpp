@@ -8,7 +8,7 @@
 
 namespace dvs_mosaic
 {
-
+/*
 // CORRECT IMPLEMENTATION
 void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
   const double t_ev, const double t_prev,
@@ -17,7 +17,7 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
     const int idx = ev.y * sensor_width_ + ev.x;
 
     // Get time of current and last event at the pixel
-    time_map_.at<double>(ev.y, ev.x) = t_ev;
+    //time_map_.at<double>(ev.y, ev.x) = t_ev;
 
     const double dt_ev = t_ev - t_prev;
     CHECK_GT(dt_ev, 0) << "Non-positive dt_ev"; // Two events at same pixel with same timestamp
@@ -79,12 +79,12 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
     grad_map_.at<cv::Vec2f>(pm) = cv::Vec2f(gm(0, 0), gm(1, 0));
     grad_map_covar_.at<cv::Vec3f>(pm) = cv::Vec3f(Pg(0, 0), 0.5f*(Pg(0, 1)+Pg(1, 0)), Pg(1, 1));
   }
-
+*/
 
 /**
 * \brief Process each event to refine the mosaic variables (mean and covariance)
 */
-/*
+
 // MY IMPLEMENTATION
 void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
   const double t_ev, const double t_prev,
@@ -93,27 +93,29 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
   const double dt_ev = t_ev - t_prev;
   CHECK_GT(dt_ev,0) << "Non-positive dt_ev"; // Two events at same pixel with same timestamp
 
+  const int index = ev.y * sensor_width_ + ev.x;
+
   // Get map point corresponding to current event
   // hint: call project_EquirectangularProjection
-  const int idx = ev.y*sensor_width_ + ev.x;
-  cv::Point3d rotated_bvec = Rot * precomputed_bearing_vectors_.at(idx);
-  cv::Point2f pm; // point on 2D map (mosaic)
-  // computes 2D point on map corresponding to 3D point in real world
+  cv::Point3d rotated_bvec = Rot * precomputed_bearing_vectors_.at(index);
+  cv::Point2f pm;
   project_EquirectangularProjection(rotated_bvec, pm);
 
   // Get map point corresponding to previous event at same pixel
-  cv::Point3d rotated_bvec_prev = Rot_prev * precomputed_bearing_vectors_.at(idx);
-  cv::Point2f pm_prev; // point on 2D map (mosaic)
-  // computes 2D point on map corresponding to 3D point in real world
-  project_EquirectangularProjection(rotated_bvec, pm);
-
+  cv::Point3d rotated_bvec_prev = Rot_prev * precomputed_bearing_vectors_.at(index);
+  cv::Point2f pm_prev;
+   project_EquirectangularProjection(rotated_bvec_prev, pm_prev);
 
   // Get approx optical flow vector (vector v in the paper)
   cv::Point2f flow_vec;
-
   // avoid zero division
-  double smoothing = 1e-10;
-  flow_vec = (pm-pm_prev)/ (smoothing+dt_ev);
+  if (dt_ev != 0.0){
+    flow_vec = (pm-pm_prev)/ dt_ev;
+  } 
+  // if dt_ev zero -> set (0,0)
+  else {
+    flow_vec = cv::Point2f(0.0, 0.0);
+  }
 
   // Extended Kalman Filter (EKF) for the intensity gradient map.
   // Get gradient and covariance at current map point pm
@@ -127,8 +129,6 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
 
   // Compute innovation, measurement matrix and Kalman gain
   float nu_innovation;
-  cv::Matx21f Kalman_gain;
-  cv::Matx21f jacobian;
 
     // get polarity
   int pol;
@@ -139,18 +139,17 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
   }
   // calculate innovation nu
   nu_innovation = (1.0/dt_ev)-(gm.dot(flow_vec)/C_th_*pol); 
-    
+  
+  cv::Matx21f jacobian;
   // calculate Jacobian (delta g/delta h)
   jacobian = cv::Matx21f(flow_vec/C_th_* pol);
-  // don't forget polarity
-  jacobian = jacobian * pol;
 
   // Pg * Jacobian
   cv::Matx21f Pg_jac = Pg * jacobian;
   // covaraince S
   float covar_s = jacobian.dot(Pg_jac) + var_R_;
   // get Kalman gain
-  Kalman_gain = Pg_jac *(1.0/covar_s);
+  cv::Matx21f Kalman_gain = Pg_jac *(1.0/covar_s);
 
   // Update gradient (state) and covariance
   gm += Kalman_gain * nu_innovation;
@@ -163,5 +162,5 @@ void Mosaic::processEventForMap(const dvs_msgs::Event& ev,
     cv::Vec3f covar_vector(Pg(0,0), Pg(0,1), Pg(1,1));
     grad_map_covar_.at<cv::Vec3f>(pm) = covar_vector;
 }
-*/
+
 }
