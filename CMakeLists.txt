@@ -6,7 +6,7 @@ catkin_simple(ALL_DEPS_REQUIRED)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.2 REQUIRED)
 
 # Make the executable
 cs_add_executable(${PROJECT_NAME}

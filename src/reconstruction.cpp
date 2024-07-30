@@ -22,7 +22,6 @@ void reconstructBrightnessFromGradientMap(const cv::Mat& grad_map,
   const size_t width = img_size.width;
   boost::multi_array<double,2> M(boost::extents[height][width]);
   boost::multi_array<double,2> F(boost::extents[height][width]);
-
   // Compute right hand side (rhs) using one-sided finite differences
   for(size_t i=0; i < height-1; ++i)
   {
@@ -30,6 +29,9 @@ void reconstructBrightnessFromGradientMap(const cv::Mat& grad_map,
     {
       F[i][j] = double( grad_map.at<cv::Vec2f>(i,j+1)[0] - grad_map.at<cv::Vec2f>(i,j)[0]
                       + grad_map.at<cv::Vec2f>(i+1,j)[1] - grad_map.at<cv::Vec2f>(i,j)[1] );
+      //if (F[i][j] != 0.0){
+      //  VLOG(0) << 'F[i][j] :' << F[i][j] ;
+      //}
     }
   }
   F[height-1][width-1] = 0.0;
@@ -40,12 +42,13 @@ void reconstructBrightnessFromGradientMap(const cv::Mat& grad_map,
   pde::poisolve(M, F, 1.0, 1.0, 1.0, 1.0,
                 gradient_on_boundary,
                 pde::types::boundary::Neumann,false);
-  
+
   // Fill in output variable
   *map_reconstructed = cv::Mat(img_size, CV_32FC1);
   for (int y=0; y<height; y++){
     for (int x=0; x< width; x++){
       map_reconstructed->at<float>(y,x)=M[y][x];
+      //VLOG(0) << 'M[y][x] :' << M[y][x] ;
     }
   }
 

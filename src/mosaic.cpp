@@ -112,7 +112,7 @@ void Mosaic::eventsCallback(const dvs_msgs::EventArray::ConstPtr& msg)
   static unsigned int packet_number = 0;
   static unsigned long total_event_count = 0;
   total_event_count += msg->events.size();
-  VLOG(1) << "Packet # " << packet_number << "  event# " << total_event_count << "  queue_size:" << events_.size();
+  //VLOG(1) << "Packet # " << packet_number << "  event# " << total_event_count << "  queue_size:" << events_.size();
 
   if (packet_number == 0)
   {

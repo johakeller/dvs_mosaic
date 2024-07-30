@@ -34,14 +34,21 @@ namespace dvs_mosaic
     {
       // Brightness image. Fill content in appropriate range [0,255] and publish
       // Call Poisson solver and publish on mosaic_pub_
-      cv::Mat reconstruction_map;
       // reconstruct from gradient map
       poisson::reconstructBrightnessFromGradientMap(grad_map_, &mosaic_img_);
+ //------------------------------------------------------------------------------------------------------------------------------
+      // Debug: Check values in mosaic_img_
+      //double minVal, maxVal;
+      //cv::minMaxLoc(mosaic_img_, &minVal, &maxVal);
+      //VLOG(1) << "mosaic_img_ min value: " << minVal << " max value: " << maxVal;
+//-----------------------------------------------------------------------------------------------
+
       // normalize: call image_util::normalize discarding 1% of pixels
-      //image_util::normalize(mosaic_img_,cv_image.image, 1.0);
+      image_util::normalize(mosaic_img_,cv_image.image, 1.0);
+
       // publish
-      mosaic_img_.convertTo(cv_image.image, CV_8UC1);
       mosaic_pub_.publish(cv_image.toImageMsg());
+      //VLOG(1) << "_______________________________publishing mosaic___________________________________";
     }
 
     if (mosaic_gradx_pub_.getNumSubscribers() > 0 ||
