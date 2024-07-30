@@ -36,19 +36,12 @@ namespace dvs_mosaic
       // Call Poisson solver and publish on mosaic_pub_
       // reconstruct from gradient map
       poisson::reconstructBrightnessFromGradientMap(grad_map_, &mosaic_img_);
- //------------------------------------------------------------------------------------------------------------------------------
-      // Debug: Check values in mosaic_img_
-      //double minVal, maxVal;
-      //cv::minMaxLoc(mosaic_img_, &minVal, &maxVal);
-      //VLOG(1) << "mosaic_img_ min value: " << minVal << " max value: " << maxVal;
-//-----------------------------------------------------------------------------------------------
 
       // normalize: call image_util::normalize discarding 1% of pixels
       image_util::normalize(mosaic_img_,cv_image.image, 1.0);
 
       // publish
       mosaic_pub_.publish(cv_image.toImageMsg());
-      //VLOG(1) << "_______________________________publishing mosaic___________________________________";
     }
 
     if (mosaic_gradx_pub_.getNumSubscribers() > 0 ||
@@ -66,7 +59,7 @@ namespace dvs_mosaic
       cv::Mat gradient_components[2];
       // splitting
       cv::split(grad_map_, gradient_components);
-      //       call image_util::normalize
+      // call image_util::normalize
       image_util::normalize(gradient_components[0], cv_gradient_x.image, 1.0);
       image_util::normalize(gradient_components[1], cv_gradient_y.image, 1.0);
       // publish

@@ -88,12 +88,12 @@ Mosaic::Mosaic(ros::NodeHandle & nh, ros::NodeHandle nh_private)
 
 Mosaic::~Mosaic()
 {
+  // shut down all publishers
   time_map_pub_.shutdown();
   mosaic_pub_.shutdown();
   mosaic_gradx_pub_.shutdown();
   mosaic_grady_pub_.shutdown();
   mosaic_tracecov_pub_.shutdown();
-  // shut down all publishers
 }
 
 

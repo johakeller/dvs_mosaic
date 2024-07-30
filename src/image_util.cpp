@@ -12,6 +12,7 @@ void minMaxLocRobust(const cv::Mat& image, float& rmin, float& rmax,
 {
   cv::Mat image_as_row = image.reshape(0,1);
   cv::Mat image_as_row_sorted;
+  // CV_SORT_EVERY_ROW and CV_SORT_ASCENDING replaced (deprecated)
   cv::sort(image_as_row, image_as_row_sorted, cv::SORT_EVERY_ROW + cv::SORT_ASCENDING);
   image_as_row_sorted.convertTo(image_as_row_sorted, CV_32FC1);
   const int single_row_idx_min = (0.5f*percentage_pixels_to_discard/100.f)*image.total();
